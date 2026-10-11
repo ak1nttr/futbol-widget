@@ -8,8 +8,8 @@ Ekranın sağ üst köşesinde küçük bir top simgesi durur. Üzerine gelince 
 
 - **Favorilerim:** Her takım için canlı maç, sıradaki maç, son maç ve son 5 maçın formu (G/B/M)
 - **Bugün:** Seçilen liglerde günün maçları, gün değiştirme ve "sadece canlı" filtresi
-- **Takım:** Yaklaşan ve geçmiş maçlar; kadro ve oyuncuların sezon ortalama ratingi (lig/turnuva seçilebilir)
-- **Maç:** Skor, canlı dakika, goller ve kırmızı kartlar, iki takımın kadrosu ve maç ratingleri, maçın oyuncusu
+- **Takım:** Yaklaşan ve geçmiş maçlar; son maçtaki ilk 11 dizilişi (saha üzerinde); kadro ve oyuncuların sezon ortalama ratingi (lig/turnuva seçilebilir)
+- **Maç:** Skor, canlı dakika, goller ve kırmızı kartlar, iki takımın ilk 11 dizilişi karşılıklı aynı sahada, kadro listeleri ve maç ratingleri, maçın oyuncusu
 - **Ayarlar:** Takım arama, favori ekleme/sıralama, "Bugün" sekmesi için lig seçimi
 - Açık ve koyu tema (sistem ayarını izler)
 

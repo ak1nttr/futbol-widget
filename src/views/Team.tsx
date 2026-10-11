@@ -1,9 +1,10 @@
 import { useState } from "preact/hooks";
-import { getLastEvents, getNextEvents, getSeasonRatings, getSquad, getTeam } from "../api/sofascore";
+import { getLastEvents, getLineups, getNextEvents, getSeasonRatings, getSquad, getTeam } from "../api/sofascore";
 import type { MatchEvent, Player } from "../api/types";
 import { MatchRow } from "../components/MatchRow";
+import { Pitch } from "../components/Pitch";
 import { Empty, ErrorBox, Loading, PlayerPhoto, RatingBadge, Segmented, TeamLogo } from "../components/ui";
-import { POSITION_TR } from "../lib/format";
+import { POSITION_TR, isLive } from "../lib/format";
 import { updateSettings, useSettings } from "../lib/settings";
 import { useData } from "../lib/useData";
 
@@ -122,8 +123,34 @@ function Squad({ teamId, comps }: { teamId: number; comps: Competition[] }) {
   );
 }
 
+/** The XI from the team's live game, or else its most recent finished game. */
+function TeamLineup({ teamId, next, last }: { teamId: number; next: MatchEvent[]; last: MatchEvent[] }) {
+  const event =
+    [...next, ...last].find(isLive) ?? [...last].reverse().find((e) => e.status.type === "finished");
+  const { data, error } = useData(async () => (event ? getLineups(event.id) : null), [event?.id]);
+
+  if (!event) return <Empty>Diziliş bilgisi yok.</Empty>;
+  if (error && data === undefined) return <ErrorBox error={error} />;
+  if (data === undefined) return <Loading />;
+  if (!data) return <Empty>Bu maçın dizilişi açıklanmamış.</Empty>;
+
+  const home = event.homeTeam.id === teamId;
+  const side = home ? data.home : data.away;
+  return (
+    <div class="list">
+      <section class="card">
+        <div class="league-head">
+          {isLive(event) ? "Şu an oynanan maç" : "Son maç"} · {side.formation ?? ""}
+        </div>
+        <MatchRow e={event} showDay />
+      </section>
+      <Pitch bottom={side} />
+    </div>
+  );
+}
+
 export function TeamView({ id }: { id: number }) {
-  const [tab, setTab] = useState<"matches" | "squad">("matches");
+  const [tab, setTab] = useState<"matches" | "lineup" | "squad">("matches");
   const { favorites } = useSettings();
   const isFav = favorites.some((f) => f.id === id);
   const { data, error } = useData(
@@ -157,10 +184,13 @@ export function TeamView({ id }: { id: number }) {
         onChange={setTab}
         options={[
           ["matches", "Maçlar"],
+          ["lineup", "Diziliş"],
           ["squad", "Kadro"],
         ]}
       />
-      {tab === "matches" ? <Matches next={next} last={last} /> : <Squad teamId={id} comps={competitionsFrom(last)} />}
+      {tab === "matches" && <Matches next={next} last={last} />}
+      {tab === "lineup" && <TeamLineup teamId={id} next={next} last={last} />}
+      {tab === "squad" && <Squad teamId={id} comps={competitionsFrom(last)} />}
     </div>
   );
 }

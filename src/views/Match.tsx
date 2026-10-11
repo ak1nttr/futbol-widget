@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { getEvent, getIncidents, getLineups } from "../api/sofascore";
 import type { Incident, LineupPlayer } from "../api/types";
+import { Pitch } from "../components/Pitch";
 import { ErrorBox, Loading, PlayerPhoto, RatingBadge, Segmented, TeamLogo } from "../components/ui";
 import { STATUS_TR, fmtDay, fmtTime, isLive, liveMinute } from "../lib/format";
 import { useData, useTick } from "../lib/useData";
@@ -78,7 +79,7 @@ function LineupList({ players, best }: { players: LineupPlayer[]; best?: number 
 
 export function MatchView({ id }: { id: number }) {
   const nav = useNav();
-  const [side, setSide] = useState<"home" | "away">("home");
+  const [view, setView] = useState<"pitch" | "home" | "away">("pitch");
   const { data, error } = useData(
     () => Promise.all([getEvent(id), getLineups(id), getIncidents(id)]).then(([event, lineups, incidents]) => ({ event, lineups, incidents })),
     [id],
@@ -129,15 +130,32 @@ export function MatchView({ id }: { id: number }) {
       {lineups ? (
         <>
           <Segmented
-            value={side}
-            onChange={setSide}
+            value={view}
+            onChange={setView}
             options={[
-              ["home", `${e.homeTeam.shortName ?? e.homeTeam.name}${lineups.home.formation ? ` (${lineups.home.formation})` : ""}`],
-              ["away", `${e.awayTeam.shortName ?? e.awayTeam.name}${lineups.away.formation ? ` (${lineups.away.formation})` : ""}`],
+              ["pitch", "Diziliş"],
+              ["home", e.homeTeam.shortName ?? e.homeTeam.name],
+              ["away", e.awayTeam.shortName ?? e.awayTeam.name],
             ]}
           />
           {!lineups.confirmed && <div class="note">Muhtemel kadro</div>}
-          <LineupList players={lineups[side].players} best={started ? best?.player.id : undefined} />
+          {view === "pitch" ? (
+            <div class="list">
+              <div class="formations">
+                <span>
+                  {e.awayTeam.shortName ?? e.awayTeam.name} <b>{lineups.away.formation}</b>
+                </span>
+              </div>
+              <Pitch top={lineups.away} bottom={lineups.home} bestId={started ? best?.player.id : undefined} />
+              <div class="formations">
+                <span>
+                  {e.homeTeam.shortName ?? e.homeTeam.name} <b>{lineups.home.formation}</b>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <LineupList players={lineups[view].players} best={started ? best?.player.id : undefined} />
+          )}
         </>
       ) : (
         <div class="note">Kadrolar henüz açıklanmadı.</div>
