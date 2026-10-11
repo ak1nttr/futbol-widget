@@ -23,7 +23,7 @@ Ekranın sağ üst köşesinde küçük bir top simgesi durur. Üzerine gelince 
 
 ## Kurulum
 
-[Releases](https://github.com/ak1nttr/futbol-widget/releases) sayfasındaki `Futbol Widget_x.y.z_x64-setup.exe` dosyasını indirip çalıştır. Yönetici izni gerekmez.
+[Releases](https://github.com/ak1nttr/futbol-widget/releases) sayfasındaki `Futbol-Widget_x.y.z_x64-setup.exe` dosyasını indirip çalıştır. Yönetici izni gerekmez.
 
 ## Geliştirme
 
