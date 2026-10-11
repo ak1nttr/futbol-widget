@@ -96,10 +96,28 @@ small {
 
 /* ---------- floating icon + panel ---------- */
 
+/* Icon in the top-right corner, panel opens below it. */
 .widget {
+  --edge: 20px;
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  top: var(--edge);
+  right: var(--edge);
+}
+
+/* Desktop app: the native window is the widget, so the page is transparent
+   and the icon sits 10px inside the window (room for its shadow). */
+html.desktop,
+html.desktop body {
+  background: transparent;
+  overflow: hidden;
+}
+
+html.desktop .demo-hint {
+  display: none;
+}
+
+html.desktop .widget {
+  --edge: 10px;
 }
 
 .bubble {
@@ -142,20 +160,20 @@ small {
 .panel {
   position: absolute;
   right: 0;
-  bottom: 68px;
+  top: 64px;
   width: 360px;
-  height: min(580px, calc(100vh - 110px));
+  height: min(600px, calc(100vh - 64px - 2 * var(--edge)));
   display: flex;
   flex-direction: column;
   border-radius: 14px;
   overflow: hidden;
   background: var(--bg);
   box-shadow: var(--shadow);
-  transform-origin: bottom right;
+  transform-origin: top right;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(8px) scale(0.97);
+  transform: translateY(-8px) scale(0.97);
   transition:
     opacity 0.14s ease,
     transform 0.14s ease,
@@ -779,4 +797,18 @@ label.setting-row:hover {
   .panel.open {
     transition: none;
   }
+}
+
+/* The collapsed window is only 76px, so keep the icon's shadow tight. */
+html.desktop .bubble {
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+}
+
+html.desktop .bubble.has-live {
+  box-shadow: 0 0 0 2px var(--live), 0 2px 8px rgb(0 0 0 / 0.3);
+}
+
+/* On the desktop a big shadow looks heavy; a hairline border is enough. */
+html.desktop .panel {
+  box-shadow: 0 0 0 1px var(--line);
 }

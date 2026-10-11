@@ -1,8 +1,10 @@
+import { isDesktop } from "../lib/desktop";
 import type { Incident, Lineups, MatchEvent, Player, SeasonRating, Team, UniqueTournament } from "./types";
 
-// All requests go through a local proxy (dev: Vite middleware, later: Tauri/Rust),
-// because Sofascore rejects requests coming straight from a browser engine.
-const BASE = "/sofa/";
+// All requests go through a local proxy (browser demo: Vite middleware, desktop:
+// the app's `sofa://` scheme in Rust), because Sofascore rejects requests coming
+// straight from a browser engine.
+const BASE = isDesktop ? "http://sofa.localhost/" : "/sofa/";
 
 export const teamImage = (id: number) => `${BASE}team/${id}/image`;
 export const playerImage = (id: number) => `${BASE}player/${id}/image`;

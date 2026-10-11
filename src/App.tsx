@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { getLastEvents, getNextEvents } from "./api/sofascore";
 import type { MatchEvent } from "./api/types";
 import { Icon, Segmented, TeamLogo } from "./components/ui";
+import { isDesktop, onPointerOver, setWindowExpanded } from "./lib/desktop";
 import { isLive } from "./lib/format";
 import { useSettings } from "./lib/settings";
 import { useData } from "./lib/useData";
@@ -14,6 +15,8 @@ import { TodayView } from "./views/Today";
 
 const OPEN_DELAY = 120;
 const CLOSE_DELAY = 450;
+/** Matches the panel's CSS transition. */
+const PANEL_FADE = 160;
 
 /** Live games of favorite teams, used for the badge on the floating icon. */
 function useFavoriteLive(): MatchEvent | undefined {
@@ -56,6 +59,8 @@ export function App() {
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
+  const pinnedRef = useRef(pinned);
+  pinnedRef.current = pinned;
   const live = useFavoriteLive();
 
   const nav: Nav = useMemo(
@@ -68,15 +73,28 @@ export function App() {
 
   // Hover intent: open shortly after the pointer arrives, close a bit after it leaves
   // both the icon and the panel (so moving between them doesn't flicker).
+  // On desktop the native window grows before the panel opens and shrinks after
+  // it has faded out, so it never blocks clicks on the rest of the screen.
   const enter = () => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(true), OPEN_DELAY);
+    timer.current = setTimeout(async () => {
+      await setWindowExpanded(true);
+      setOpen(true);
+    }, OPEN_DELAY);
   };
   const leave = () => {
     clearTimeout(timer.current);
-    if (!pinned) timer.current = setTimeout(() => setOpen(false), CLOSE_DELAY);
+    if (pinnedRef.current) return;
+    timer.current = setTimeout(() => {
+      setOpen(false);
+      timer.current = setTimeout(() => setWindowExpanded(false), PANEL_FADE);
+    }, CLOSE_DELAY);
   };
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  // On desktop the app reports pointer enter/leave (WebView2 hover events are
+  // unreliable for a window that never takes focus).
+  useEffect(() => onPointerOver((over) => (over ? enter() : leave())), []);
 
   const route = stack[stack.length - 1];
   let body;
@@ -87,7 +105,7 @@ export function App() {
 
   return (
     <NavContext.Provider value={nav}>
-      <div class="widget" onMouseEnter={enter} onMouseLeave={leave}>
+      <div class="widget" onMouseEnter={isDesktop ? undefined : enter} onMouseLeave={isDesktop ? undefined : leave}>
         <div class={`panel${open ? " open" : ""}`} role="dialog" aria-label="Maç paneli" aria-hidden={!open}>
           <header class="panel-head">
             {route.kind === "home" ? (
