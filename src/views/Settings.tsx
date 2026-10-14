@@ -3,6 +3,8 @@ import { getDefaultTournaments, searchTeams } from "../api/sofascore";
 import type { Team } from "../api/types";
 import { ErrorBox, Loading, TeamLogo, TournamentLogo } from "../components/ui";
 import { updateSettings, useSettings } from "../lib/settings";
+import { playAlertSound } from "../lib/sound";
+import { clearAlerts } from "../lib/alerts";
 import { useData } from "../lib/useData";
 
 function TeamSearch() {
@@ -49,7 +51,7 @@ function TeamSearch() {
 }
 
 export function SettingsView() {
-  const { favorites, leagues } = useSettings();
+  const { favorites, leagues, alerts, alertSound } = useSettings();
   const tournaments = useData(getDefaultTournaments, []);
 
   const move = (i: number, d: -1 | 1) => {
@@ -85,6 +87,32 @@ export function SettingsView() {
           ))}
         </div>
         <TeamSearch />
+      </section>
+      <section class="card">
+        <div class="league-head">Bildirimler</div>
+        <div class="rows">
+          <label class="setting-row">
+            <span class="pname">
+              Bildirimleri göster
+              <small>Kapatınca hiçbir bildirim kartı açılmaz ve ses çalmaz</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={alerts}
+              onChange={() => {
+                if (alerts) clearAlerts();
+                updateSettings({ alerts: !alerts });
+              }}
+            />
+          </label>
+          <label class={`setting-row${alerts ? "" : " off"}`}>
+            <span class="pname">Bildirim sesi</span>
+            <button class="link" onClick={(e) => (e.preventDefault(), playAlertSound("goal"))}>
+              Dinle
+            </button>
+            <input type="checkbox" checked={alertSound} disabled={!alerts} onChange={() => updateSettings({ alertSound: !alertSound })} />
+          </label>
+        </div>
       </section>
       <section class="card">
         <div class="league-head">"Bugün" sekmesindeki ligler</div>

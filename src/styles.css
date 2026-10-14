@@ -933,3 +933,332 @@ html.desktop .panel {
   color: var(--text);
   margin-left: 4px;
 }
+
+/* ---------- alert cards (under the icon) ---------- */
+
+.alerts {
+  --alert-shadow: 0 3px 14px rgb(15 20 40 / 0.14), 0 1px 3px rgb(15 20 40 / 0.08);
+  position: absolute;
+  top: 64px;
+  right: 0;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.14s ease;
+}
+
+.alerts.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The slot collapses its height when a card leaves, so the cards below slide up. */
+.alert-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  padding-bottom: 8px;
+  transform-origin: top right;
+  animation: alert-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+  transition:
+    grid-template-rows 0.22s ease,
+    padding-bottom 0.22s ease,
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.alert-slot.leaving {
+  grid-template-rows: 0fr;
+  padding-bottom: 0;
+  opacity: 0;
+  transform: translateX(28px);
+}
+
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.94);
+  }
+}
+
+.alert {
+  --accent: var(--primary);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--accent), var(--alert-shadow);
+}
+
+.k-goal {
+  --accent: var(--win);
+}
+.k-goalAgainst,
+.k-goalCancelled {
+  --accent: var(--draw);
+}
+.k-red {
+  --accent: #e3261b;
+}
+.k-penalty,
+.k-penaltyMissed {
+  --accent: #e8930c;
+}
+
+.alert-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 2px 12px 13px;
+}
+
+.alert-glyph {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.alert-glyph svg {
+  width: 22px;
+  height: 22px;
+}
+
+.k-goal .alert-glyph svg,
+.k-goalAgainst .alert-glyph svg {
+  animation: ball-in 0.6s 0.1s cubic-bezier(0.25, 1.3, 0.5, 1) backwards;
+}
+
+@keyframes ball-in {
+  from {
+    transform: translate(-10px, -8px) rotate(-220deg) scale(0.6);
+  }
+}
+
+.red-card {
+  width: 13px;
+  height: 18px;
+  border-radius: 2px;
+  background: #e3261b;
+  transform: rotate(-10deg);
+  animation: card-in 0.45s 0.12s cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) rotate(-40deg);
+  }
+}
+
+.glyph-text {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.glyph-text.small {
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.k-start .alert-glyph svg,
+.k-end .alert-glyph svg {
+  transform-origin: 40% 60%;
+  animation: whistle 0.5s 0.15s ease-in-out;
+}
+
+@keyframes whistle {
+  25% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-6deg);
+  }
+}
+
+.alert-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.alert-title,
+.alert-detail {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-title {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.k-goal .alert-title {
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.alert-score {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.alert-score b {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.alert-score .dash {
+  color: var(--muted);
+}
+
+.alert-code {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* The digit that just changed rolls in from below. */
+.alert-score b.bump {
+  color: var(--accent);
+  animation: score-roll 0.5s 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.3) backwards;
+}
+
+@keyframes score-roll {
+  from {
+    opacity: 0;
+    transform: translateY(80%);
+  }
+}
+
+.alert-detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.alert-min {
+  margin-right: 5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.alert-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 6px 6px 0 0;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.alert-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* 3-minute countdown; the card closes when the bar runs out. */
+.alert-life {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.45;
+  transform-origin: left;
+  animation: alert-life 180s linear forwards;
+}
+
+.alert.paused .alert-life {
+  animation-play-state: paused;
+}
+
+@keyframes alert-life {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.alert-more {
+  align-self: flex-end;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--alert-shadow);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+/* The icon bounces once when an alert arrives. */
+.bubble.ping {
+  animation: bubble-ping 0.6s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes bubble-ping {
+  30% {
+    transform: scale(1.14);
+  }
+}
+
+.setting-row.off {
+  opacity: 0.55;
+}
+
+/* Browser demo only. */
+.demo-alerts {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.demo-alerts button {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.demo-alerts button:hover {
+  color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-slot,
+  .alert-glyph svg,
+  .red-card,
+  .alert-score b.bump,
+  .bubble.ping {
+    animation: none !important;
+  }
+  .alert-slot {
+    transition: none;
+  }
+}

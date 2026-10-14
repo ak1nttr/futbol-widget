@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { getLastEvents, getNextEvents } from "./api/sofascore";
 import type { MatchEvent } from "./api/types";
+import { AlertStack } from "./components/Alerts";
+import { DemoAlerts, useDemoOnLoad } from "./components/DemoAlerts";
 import { Icon, Segmented, TeamLogo } from "./components/ui";
-import { isDesktop, onPointerOver, setWindowExpanded } from "./lib/desktop";
-import { isLive } from "./lib/format";
-import { useSettings } from "./lib/settings";
-import { useData } from "./lib/useData";
+import { useAlerts, useMatchWatcher } from "./lib/alerts";
+import { isDesktop, onPointerMove, type PointerPos, setWindowLayout } from "./lib/desktop";
 import { type Nav, NavContext, type Route } from "./nav";
 import { FavoritesView } from "./views/Favorites";
 import { MatchView } from "./views/Match";
@@ -17,28 +16,14 @@ const OPEN_DELAY = 120;
 const CLOSE_DELAY = 450;
 /** Matches the panel's CSS transition. */
 const PANEL_FADE = 160;
+/** Room around the cards for their shadow, in the desktop window. */
+const SHADOW_ROOM = 12;
+/** Wait for a card's exit animation before shrinking the window. */
+const SHRINK_DELAY = 300;
 
-/** Live games of favorite teams, used for the badge on the floating icon. */
-function useFavoriteLive(): MatchEvent | undefined {
-  const { favorites } = useSettings();
-  const { data } = useData(
-    async () => {
-      for (const f of favorites) {
-        const [next, last] = await Promise.all([getNextEvents(f.id, 60_000), getLastEvents(f.id, 60_000)]);
-        const live = [...next, ...last].find(isLive);
-        if (live) return live;
-      }
-      return undefined;
-    },
-    [favorites.map((f) => f.id).join(",")],
-    () => 60_000,
-  );
-  return data;
-}
-
-function Bubble({ live, open }: { live?: MatchEvent; open: boolean }) {
+function Bubble({ live, open, ping }: { live?: MatchEvent; open: boolean; ping: boolean }) {
   return (
-    <div class={`bubble${open ? " open" : ""}${live ? " has-live" : ""}`} aria-label="Maçlar">
+    <div class={`bubble${open ? " open" : ""}${live ? " has-live" : ""}${ping ? " ping" : ""}`} aria-label="Maçlar">
       {live ? (
         <>
           <TeamLogo id={live.homeTeam.id} size={34} name={live.homeTeam.name} />
@@ -61,7 +46,15 @@ export function App() {
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const pinnedRef = useRef(pinned);
   pinnedRef.current = pinned;
-  const live = useFavoriteLive();
+  const openRef = useRef(open);
+  openRef.current = open;
+  const live = useMatchWatcher();
+  const alerts = useAlerts();
+  useDemoOnLoad();
+  const [hoveredAlert, setHoveredAlert] = useState<string>();
+  /** Window size the alert cards need while the panel is closed (null: none). */
+  const alertSize = useRef<{ width: number; height: number } | null>(null);
+  const shrinkTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const nav: Nav = useMemo(
     () => ({
@@ -75,26 +68,57 @@ export function App() {
   // both the icon and the panel (so moving between them doesn't flicker).
   // On desktop the native window grows before the panel opens and shrinks after
   // it has faded out, so it never blocks clicks on the rest of the screen.
+  const openPanel = async () => {
+    clearTimeout(shrinkTimer.current);
+    await setWindowLayout("panel");
+    setOpen(true);
+  };
   const enter = () => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      await setWindowExpanded(true);
-      setOpen(true);
-    }, OPEN_DELAY);
+    timer.current = setTimeout(openPanel, OPEN_DELAY);
   };
   const leave = () => {
     clearTimeout(timer.current);
     if (pinnedRef.current) return;
     timer.current = setTimeout(() => {
       setOpen(false);
-      timer.current = setTimeout(() => setWindowExpanded(false), PANEL_FADE);
+      timer.current = setTimeout(() => setWindowLayout(alertSize.current), PANEL_FADE);
     }, CLOSE_DELAY);
   };
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  // On desktop the app reports pointer enter/leave (WebView2 hover events are
+  // The panel opens when the pointer is over the icon (or stays open while it is
+  // over the panel). Over an alert card it only pauses that card's timer.
+  const overUi = useRef(false);
+  const pointerAt = (p: PointerPos) => {
+    const el = p && document.elementFromPoint(p.x, p.y);
+    const over = !!el?.closest(".bubble, .panel.open");
+    if (over !== overUi.current) {
+      overUi.current = over;
+      over ? enter() : leave();
+    }
+    setHoveredAlert(el?.closest<HTMLElement>(".alert-slot")?.dataset.key);
+  };
+  // On desktop the app reports the pointer position (WebView2 hover events are
   // unreliable for a window that never takes focus).
-  useEffect(() => onPointerOver((over) => (over ? enter() : leave())), []);
+  useEffect(() => onPointerMove(pointerAt), []);
+
+  const onAlertSize = (width: number, height: number) => {
+    alertSize.current = height ? { width: width + SHADOW_ROOM, height: height + SHADOW_ROOM } : null;    if (openRef.current) return;
+    clearTimeout(shrinkTimer.current);
+    // Grow right away; shrink after the closing card has animated out.
+    shrinkTimer.current = setTimeout(() => setWindowLayout(alertSize.current), height ? 0 : SHRINK_DELAY);
+  };
+
+  // Little bounce of the icon when a new alert comes in.
+  const [ping, setPing] = useState(false);
+  const newest = alerts[0]?.key;
+  useEffect(() => {
+    if (!newest) return;
+    setPing(true);
+    const t = setTimeout(() => setPing(false), 700);
+    return () => clearTimeout(t);
+  }, [newest]);
 
   const route = stack[stack.length - 1];
   let body;
@@ -105,7 +129,11 @@ export function App() {
 
   return (
     <NavContext.Provider value={nav}>
-      <div class="widget" onMouseEnter={isDesktop ? undefined : enter} onMouseLeave={isDesktop ? undefined : leave}>
+      <div
+        class="widget"
+        onMouseMove={isDesktop ? undefined : (e) => pointerAt({ x: e.clientX, y: e.clientY })}
+        onMouseLeave={isDesktop ? undefined : () => pointerAt(null)}
+      >
         <div class={`panel${open ? " open" : ""}`} role="dialog" aria-label="Maç paneli" aria-hidden={!open}>
           <header class="panel-head">
             {route.kind === "home" ? (
@@ -135,8 +163,10 @@ export function App() {
           </header>
           <div class="panel-body">{body}</div>
         </div>
-        <Bubble live={live} open={open} />
+        <AlertStack alerts={alerts} hidden={open} hoveredKey={hoveredAlert} onSize={onAlertSize} />
+        <Bubble live={live} open={open} ping={ping} />
       </div>
+      {!isDesktop && <DemoAlerts />}
     </NavContext.Provider>
   );
 }

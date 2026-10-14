@@ -10,7 +10,8 @@ Ekranın sağ üst köşesinde küçük bir top simgesi durur. Üzerine gelince 
 - **Bugün:** Seçilen liglerde günün maçları, gün değiştirme ve "sadece canlı" filtresi
 - **Takım:** Yaklaşan ve geçmiş maçlar; son maçtaki ilk 11 dizilişi (saha üzerinde); kadro ve oyuncuların sezon ortalama ratingi (lig/turnuva seçilebilir)
 - **Maç:** Skor, canlı dakika, goller ve kırmızı kartlar, iki takımın ilk 11 dizilişi karşılıklı aynı sahada, kadro listeleri ve maç ratingleri, maçın oyuncusu
-- **Ayarlar:** Takım arama, favori ekleme/sıralama, "Bugün" sekmesi için lig seçimi
+- **Bildirimler:** Favori takımların maçlarında gol, kırmızı kart, penaltı (kaçan penaltı ve VAR'ın verdiği penaltı), VAR ile iptal edilen gol, maç başladı ve maç bitti olunca simgenin altında bir kart açılır ve kısık bir ses çalar. Kart 3 dakika sonra kendiliğinden kapanır, × ile de kapatılabilir. Fare kartın üstündeyken süre durur. Ayarlardan bildirimler veya ses kapatılabilir.
+- **Ayarlar:** Takım arama, favori ekleme/sıralama, "Bugün" sekmesi için lig seçimi, bildirimler ve bildirim sesi
 - Açık ve koyu tema (sistem ayarını izler)
 
 ## Kullanım
@@ -35,6 +36,8 @@ npm run tauri dev     # masaüstü uygulaması, canlı yenileme ile
 npm run tauri build   # kurulum dosyası: src-tauri/target/release/bundle/nsis/
 npm run dev           # sadece tarayıcı demosu: http://localhost:5180
 ```
+
+Tarayıcı demosunda sayfanın altındaki "Test bildirimi" düğmeleri örnek kartlar açar (`#bildirim` adresi açılışta birkaç tane açar). Masaüstü uygulamasında ses, kullanıcı bir yere tıklamadan çalabilsin diye WebView2 `--autoplay-policy=no-user-gesture-required` ile başlatılır ([tauri.conf.json](src-tauri/tauri.conf.json)).
 
 ## Veri kaynağı
 

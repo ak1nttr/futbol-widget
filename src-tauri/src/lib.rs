@@ -15,19 +15,30 @@ const EXPANDED_MAX_H: f64 = 680.0;
 /// Gap between the window and the screen's top-right corner.
 const MARGIN: f64 = 6.0;
 
+/// What the window has to fit.
+enum Layout {
+    /// Just the round icon.
+    Icon,
+    /// Icon + panel.
+    Panel,
+    /// Icon + alert cards: a size in logical px, measured by the webview.
+    Custom(f64, f64),
+}
+
 /// Pins the window to the top-right corner of the work area (screen minus taskbar)
-/// and resizes it. The webview calls this when the pointer enters or leaves.
-fn place(window: &WebviewWindow, expanded: bool) -> tauri::Result<()> {
+/// and resizes it. The webview calls this when the panel opens or closes and when
+/// alert cards come and go.
+fn place(window: &WebviewWindow, layout: Layout) -> tauri::Result<()> {
     let Some(monitor) = window.current_monitor()?.or(window.primary_monitor()?) else {
         return Ok(());
     };
     let scale = monitor.scale_factor();
     let area = monitor.work_area();
-    let (w, h) = if expanded {
-        let max_h = area.size.height as f64 / scale - 2.0 * MARGIN;
-        (EXPANDED_W, EXPANDED_MAX_H.min(max_h))
-    } else {
-        COLLAPSED
+    let max_h = area.size.height as f64 / scale - 2.0 * MARGIN;
+    let (w, h) = match layout {
+        Layout::Icon => COLLAPSED,
+        Layout::Panel => (EXPANDED_W, EXPANDED_MAX_H.min(max_h)),
+        Layout::Custom(w, h) => (w.clamp(COLLAPSED.0, EXPANDED_W), h.clamp(COLLAPSED.1, max_h)),
     };
     let (pw, ph) = ((w * scale).round() as u32, (h * scale).round() as u32);
     let x = area.position.x + area.size.width as i32 - pw as i32 - (MARGIN * scale) as i32;
@@ -37,14 +48,23 @@ fn place(window: &WebviewWindow, expanded: bool) -> tauri::Result<()> {
     Ok(())
 }
 
+/// `panel`: fit the panel. Otherwise fit `width` x `height` (logical px), or
+/// just the icon when they are 0.
 #[tauri::command]
-fn set_expanded(window: WebviewWindow, expanded: bool) -> Result<(), String> {
-    place(&window, expanded).map_err(|e| e.to_string())
+fn set_layout(window: WebviewWindow, panel: bool, width: f64, height: f64) -> Result<(), String> {
+    let layout = if panel {
+        Layout::Panel
+    } else if width > 0.0 && height > 0.0 {
+        Layout::Custom(width, height)
+    } else {
+        Layout::Icon
+    };
+    place(&window, layout).map_err(|e| e.to_string())
 }
 
 fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
-        let _ = place(&w, false);
+        let _ = place(&w, Layout::Icon);
         let _ = w.show();
         desktop::send_to_bottom(&w);
     }
@@ -130,7 +150,7 @@ pub fn run() {
                 responder.respond(app.state::<Sofa>().respond(&path));
             });
         })
-        .invoke_handler(tauri::generate_handler![set_expanded])
+        .invoke_handler(tauri::generate_handler![set_layout])
         .setup(|app| {
             let handle = app.handle();
             if !cfg!(debug_assertions) {

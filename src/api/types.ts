@@ -68,7 +68,9 @@ export interface Lineups {
 }
 
 export interface Incident {
-  incidentType: "goal" | "card" | "substitution" | "period" | "injuryTime" | "varDecision" | string;
+  /** Unique per incident type (VAR decisions use a separate id range). */
+  id?: number;
+  incidentType: "goal" | "card" | "substitution" | "period" | "injuryTime" | "varDecision" | "inGamePenalty" | string;
   incidentClass?: string;
   time?: number;
   addedTime?: number;
@@ -79,6 +81,10 @@ export interface Incident {
   homeScore?: number;
   awayScore?: number;
   text?: string;
+  /** Cards: true when the card was taken back. */
+  rescinded?: boolean;
+  /** Missed penalties: e.g. "goalkeeperSave". */
+  reason?: string;
 }
 
 export interface SeasonRating {

@@ -1,6 +1,6 @@
 [package]
 name = "futbol-widget"
-version = "0.2.0"
+version = "0.3.0"
 description = "Masaüstü futbol widget'ı"
 authors = ["ak1nttr"]
 license = ""

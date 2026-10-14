@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Futbol Widget",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "com.ak1nttr.futbolwidget",
   "build": {
     "frontendDist": "../dist",
@@ -23,7 +23,8 @@
         "alwaysOnBottom": true,
         "skipTaskbar": true,
         "focus": false,
-        "visible": false
+        "visible": false,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required"
       }
     ],
     "security": {
